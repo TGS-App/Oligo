@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import * as webpack from 'webpack';
+import * as expres from 'express';
+import * as wdm from 'webpack-dev-middleware';
 import * as sharp from 'sharp';
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -32,6 +34,7 @@ const browsers = [
 interface OligoConfig {
   routes: string;
   port: number;
+  portHall: number;
   inputs: {
     root: string;
     entry: string;
@@ -81,7 +84,7 @@ class Oligo {
     this.routes = routes;
   }
 
-  public static csvToString(CSP: OligoConfig['csp']): string {
+  public static cspToString(CSP: OligoConfig['csp']): string {
     return Object.keys(CSP).map((scope): string => `${scope.replace(/[A-Z]/g, (char): string => `-${char.toLowerCase()}`)} ${CSP[scope].join(' ')}`).join('; ');
   }
 
@@ -105,35 +108,12 @@ class Oligo {
         },
       },
       devtool: dev ? 'eval' : 'source-map',
-      devServer: {
-        port: this.config.port,
-        hot: true,
-        compress: true,
-        disableHostCheck: true,
-        watchOptions: {
-          poll: 1000,
-        },
-        stats: {
-          assets: false,
-          children: false,
-          chunks: false,
-          chunkModules: false,
-          colors: true,
-          entrypoints: false,
-          hash: false,
-          modules: false,
-          timings: false,
-          version: false,
-        },
-        before(app): void { app.use(this.routes); },
-      },
       module: {
         rules: [
           {
             test: /\.pug$/,
             loader: 'pug-plain-loader',
             include: $(this.config.inputs.root),
-            query: { data: { version: this.version, csp: this.config.csp } },
           },
           {
             test: /\.js$/,
@@ -250,8 +230,8 @@ class Oligo {
           filename: 'index.html', // output name
           template: `!!pug-loader!${$(this.config.inputs.jade)}`,
           inject: true,
-          csp: this.config.csp,
-          isCordova: this.config.csp,
+          csp: Oligo.cspToString(this.config.csp),
+          isCordova: cordova,
           minify: !dev ? {
             collapseWhitespace: true,
             removeComments: true,
@@ -271,13 +251,13 @@ class Oligo {
     };
   }
 
-  public async build(): Promise<void> {
+  public async build(): Promise<any> {
     await fs.remove('./cordova/www/');
     await fs.remove('./www-tmp/');
     await this.assets();
     console.log('Webpack build in progress... (this can take up to 5 minutes)');
 
-    webpack(this.webpackConfig(), async (err, stats): Promise<void> => {
+    return webpack(this.webpackConfig(), async (err, stats): Promise<void> => {
       if (err) throw err;
 
       process.stdout.write(`${stats.toString({
@@ -302,7 +282,30 @@ class Oligo {
       }
 
       console.log('✔ Build complete.\n');
+      process.exit(0);
     });
+  }
+
+  public dev(): void {
+    const compiler = webpack(this.webpackConfig());
+    const app = express();
+    app.use(wdm(compiler, {
+      watchOptions: { poll: 1000 },
+      stats: {
+        assets: false,
+        children: false,
+        chunks: false,
+        chunkModules: false,
+        colors: true,
+        entrypoints: false,
+        hash: false,
+        modules: false,
+        timings: false,
+        version: false,
+      },
+    }));
+    app.use(this.routes);
+    app.listen(this.config.port, () => console.log(`Dev server listening on http://localhost:${this.config.port}`));
   }
 
   private async assets(): Promise<void> {
@@ -361,7 +364,7 @@ async function main(): Promise<void> {
   const config: OligoConfig = await import($('oligo.json'));
   const routes: express.Application = await import($(config.routes));
 
-  await new Oligo(version, config, routes).build();
+  await new Oligo(version, config, routes)[dev ? 'dev' : 'build']();
 }
 
 main();
