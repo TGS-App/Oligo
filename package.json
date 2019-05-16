@@ -1,6 +1,6 @@
 {
   "name": "oligo",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "🦖 🦕 Oligo provides build tooling for the TGS App",
   "license": "MIT",
   "author": "Kyle Hensel",
@@ -62,7 +62,7 @@
     "node": ">=10.0.0"
   },
   "files": [
-    "/dist"
+    "/dist", "/google-services-template.json"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
