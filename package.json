@@ -70,7 +70,7 @@
     "oligo": "./dist/index.js"
   },
   "scripts": {
-    "test": "eslint src",
+    "test": "eslint src --ext .ts",
     "prepublish": "tsc"
   }
 }

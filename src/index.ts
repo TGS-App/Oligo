@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import * as webpack from 'webpack';
-import * as expres from 'express';
 import * as wdm from 'webpack-dev-middleware';
 import * as sharp from 'sharp';
 import * as fs from 'fs-extra';
