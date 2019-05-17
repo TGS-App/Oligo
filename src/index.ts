@@ -14,11 +14,10 @@ import * as WorkboxPlugin from 'workbox-webpack-plugin';
 
 
 const cwd = process.cwd();
-const dev = process.argv.includes('--dev');
-const cordova = process.argv.includes('--cordova');
+const env = process.argv.includes('--dev') ? 'dev' : process.argv.includes('--cordova') ? 'cordova' : 'prod'; // eslint-disable-line
 
 const webTemp = path.join(__dirname, '../tmp');
-const $ = (...dirs: string[]): string => path.join(cwd, ...dirs);
+const $ = (dir: string): string => path.join(cwd, dir);
 
 const browsers = [
   'Android >= 5',
@@ -43,11 +42,13 @@ interface OligoConfig {
   outputs: {
     web: string;
     cordova: string;
+    webAssets: string;
+    cordovaAssets: string;
   };
   googleServices: string;
   modules: string[];
   csp: {
-    defaultSrc: string[];
+    defaultSrc?: string[];
     scriptSrc?: string[];
     styleSrc?: string[];
     imgSrc?: string[];
@@ -75,12 +76,9 @@ class Oligo {
 
   private config: OligoConfig;
 
-  private routes: express.Application;
-
-  public constructor(version: string, config: OligoConfig, routes: express.Application) {
+  public constructor(version: string, config: OligoConfig) {
     this.version = version;
     this.config = config;
-    this.routes = routes;
   }
 
   public static cspToString(CSP: OligoConfig['csp']): string {
@@ -89,7 +87,7 @@ class Oligo {
 
   private webpackConfig(): webpack.Configuration {
     return {
-      mode: dev ? 'development' : 'production',
+      mode: env === 'dev' ? 'development' : 'production',
       entry: [
         'babel-polyfill',
         $(this.config.inputs.entry),
@@ -106,7 +104,7 @@ class Oligo {
           '@': $(this.config.inputs.root),
         },
       },
-      devtool: dev ? 'eval' : 'source-map',
+      devtool: env === 'dev' ? 'eval' : 'source-map',
       module: {
         rules: [
           {
@@ -130,7 +128,7 @@ class Oligo {
               //  stuff from front-end but babel won't transform it
               $(this.config.inputs.root),
 
-              $('node_modules/framework7'),
+              $('node_modules/framework7'), // FIXME: this is dumb, we don't need to transform these
               $('node_modules/framework7-vue'),
               $('node_modules/template7'),
               $('node_modules/dom7'),
@@ -151,7 +149,7 @@ class Oligo {
           {
             test: /\.css$/,
             use: [
-              (dev ? 'style-loader' : {
+              (env === 'dev' ? 'style-loader' : {
                 loader: MiniCssExtractPlugin.loader,
                 options: { publicPath: '../' },
               }),
@@ -166,7 +164,7 @@ class Oligo {
           {
             test: /\.s(a|c)ss$/,
             use: [
-              (dev ? 'style-loader' : {
+              (env === 'dev' ? 'style-loader' : {
                 loader: MiniCssExtractPlugin.loader,
                 options: {
                   publicPath: '../',
@@ -190,7 +188,7 @@ class Oligo {
             },
             include: [
               $(this.config.inputs.root),
-              $('node_modules/framework7'),
+              $('node_modules/framework7'), // FIXME: why do we need to transform images in f7 repo?
               $('node_modules/framework7-vue'),
             ],
           },
@@ -199,14 +197,14 @@ class Oligo {
       plugins: [
         new webpack.DefinePlugin({
           'process.env': {
-            NODE_ENV: JSON.stringify(dev ? 'development' : 'production'),
+            NODE_ENV: JSON.stringify(env === 'dev' ? 'development' : 'production'),
             VERSION: JSON.stringify(this.version),
-            CORDOVA: JSON.stringify(cordova),
+            CORDOVA: JSON.stringify(env === 'cordova'),
             DATE: JSON.stringify(+new Date()),
           },
         }),
         new VueLoaderPlugin(),
-        ...(!dev ? [
+        ...(env !== 'dev' ? [
           // Production only plugins
           new UglifyJsPlugin({
             uglifyOptions: { warnings: false },
@@ -230,8 +228,8 @@ class Oligo {
           template: `!!pug-loader!${$(this.config.inputs.jade)}`,
           inject: true,
           csp: Oligo.cspToString(this.config.csp),
-          isCordova: cordova,
-          minify: !dev ? {
+          isCordova: env === 'cordova',
+          minify: env !== 'dev' ? {
             collapseWhitespace: true,
             removeComments: true,
             removeRedundantAttributes: true,
@@ -241,7 +239,7 @@ class Oligo {
           } : false,
         }),
         new MiniCssExtractPlugin({ filename: 'css/app.css' }),
-        ...(!cordova ? [
+        ...(env !== 'cordova' ? [
           new WorkboxPlugin.InjectManifest({
             swSrc: $(this.config.inputs.sw),
           }),
@@ -250,22 +248,23 @@ class Oligo {
     };
   }
 
-  public async build(): Promise<any> {
-    await fs.remove('./cordova/www/');
-    await fs.remove('./www-tmp/');
+  public async build(): Promise<webpack.Watching | webpack.Compiler> {
+    await fs.remove($(this.config.outputs.webAssets));
+    await fs.remove($(this.config.outputs.cordova));
+    await fs.remove(webTemp);
     await this.assets();
     console.log('Webpack build in progress... (this can take up to 5 minutes)');
 
     return webpack(this.webpackConfig(), async (err, stats): Promise<void> => {
       if (err) throw err;
 
-      process.stdout.write(`${stats.toString({
+      console.log(stats.toString({
         colors: true,
         modules: false,
         children: false,
         chunks: false,
         chunkModules: false,
-      })}\n\n`);
+      }));
 
       if (stats.hasErrors()) {
         console.log('❌ Build failed with errors.\n');
@@ -273,19 +272,17 @@ class Oligo {
       }
 
       console.log('Copying temp files to output...');
-      if (!cordova) {
-        const output = $(this.config.outputs[cordova ? 'cordova' : 'web']);
-        await fs.remove(output);
-        await fs.copy(webTemp, output);
-        await fs.remove(webTemp);
-      }
+      const output = $(this.config.outputs[env === 'cordova' ? 'cordova' : 'web']);
+      await fs.remove(output);
+      await fs.copy(webTemp, output);
+      await fs.remove(webTemp);
 
       console.log('✔ Build complete.\n');
       process.exit(0);
     });
   }
 
-  public dev(): void {
+  public dev(routes: express.Application): void {
     const compiler = webpack(this.webpackConfig());
     const app = express();
     app.use(wdm(compiler, {
@@ -303,8 +300,10 @@ class Oligo {
         version: false,
       },
     }));
-    app.use(this.routes);
-    app.listen(this.config.port, () => console.log(`Dev server listening on http://localhost:${this.config.port}`));
+    app.use(routes);
+    app.listen(this.config.port, (): void => {
+      console.log(`Dev server listening on http://localhost:${this.config.port}`);
+    });
   }
 
   private async assets(): Promise<void> {
@@ -322,7 +321,6 @@ class Oligo {
 
     let count = 0;
     try {
-      await fs.remove('./static/auto-generated/');
       for (const name in this.config.assets) {
         const { src, sizes, output } = this.config.assets[name];
         if (Array.isArray(sizes)) { // if an array
@@ -348,7 +346,7 @@ class Oligo {
         }
       }
       console.log('Copying files...');
-      await fs.copy('./static/auto-generated/', './cordova/www/auto-generated');
+      await fs.copy($(this.config.outputs.webAssets), $(this.config.outputs.cordovaAssets));
       console.log(`Converted ${count} assets!`);
     } catch (err) {
       console.error(`Conversion failed after ${count} assets!`, err);
@@ -358,12 +356,16 @@ class Oligo {
 }
 
 async function main(): Promise<void> {
-  console.log('🦖 🦕 Oligo building for', { dev, cordova }, 'from', cwd);
+  console.log(`🦖 🦕 Oligo building for ${env} from ${cwd}`);
   const { version } = await import($('package.json'));
   const config: OligoConfig = await import($('oligo.json'));
-  const routes: express.Application = await import($(config.routes));
 
-  await new Oligo(version, config, routes)[dev ? 'dev' : 'build']();
+  if (env === 'dev') {
+    const routes: express.Application = await import($(config.routes));
+    await new Oligo(version, config).dev(routes);
+  } else {
+    await new Oligo(version, config).build();
+  }
 }
 
 main();
