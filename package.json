@@ -1,6 +1,6 @@
 {
   "name": "oligo",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "🦖 🦕 Oligo provides build tooling for the TGS App",
   "license": "MIT",
   "author": "Kyle Hensel",
@@ -11,7 +11,6 @@
     "@babel/preset-env": "^7.4.2",
     "@babel/runtime": "^7.4.2",
     "@sentry/browser": "^5.1.1",
-    "@sentry/cli": "^1.42.0",
     "@sentry/integrations": "^5.1.0",
     "babel-loader": "^8.0.5",
     "babel-polyfill": "^6.26.0",
@@ -62,7 +61,8 @@
     "node": ">=10.0.0"
   },
   "files": [
-    "/dist", "/google-services-template.json"
+    "/dist",
+    "/google-services-template.json"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
