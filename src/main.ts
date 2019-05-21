@@ -1,6 +1,4 @@
-#!/usr/bin/env node
 import * as webpack from 'webpack';
-import * as wdm from 'webpack-dev-middleware';
 import * as sharp from 'sharp';
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -12,11 +10,11 @@ import * as UglifyJsPlugin from 'uglifyjs-webpack-plugin';
 import * as WorkboxPlugin from 'workbox-webpack-plugin';
 
 
-const cwd = process.cwd();
-const env = process.argv.includes('--dev') ? 'dev' : process.argv.includes('--cordova') ? 'cordova' : 'prod'; // eslint-disable-line
+export const cwd = process.cwd();
+export const env = process.argv.includes('--dev') ? 'dev' : process.argv.includes('--cordova') ? 'cordova' : 'prod'; // eslint-disable-line
 
 const webTemp = path.join(__dirname, '../tmp');
-const $ = (dir: string): string => path.join(cwd, dir);
+export const $ = (dir: string): string => path.join(cwd, dir);
 
 const browsers = [
   'Android >= 5',
@@ -28,7 +26,7 @@ const browsers = [
   'Samsung >= 5',
 ];
 
-interface OligoConfig {
+export interface OligoConfig {
   inputs: {
     root: string;
     entry: string;
@@ -67,7 +65,7 @@ interface OligoConfig {
   }>;
 }
 
-class Oligo {
+export class Oligo {
   private version: string;
 
   private config: OligoConfig;
@@ -337,39 +335,3 @@ class Oligo {
     }
   }
 }
-
-const { version } = require($('package.json')); // eslint-disable-line
-const config: OligoConfig = require($('oligo.json')); // eslint-disable-line
-
-async function cli(): Promise<void> {
-  if (process.argv.includes('-v')) {
-    const { version: v } = await import(path.join(__dirname, '../package.json'));
-    console.log(`🦖 🦕 Oligo v${v} installed in ${__dirname}`);
-    return;
-  }
-
-  console.log(`🦖 🦕 Oligo building for ${env} from ${cwd}`);
-  await new Oligo(version, config).build();
-}
-
-if (require.main !== module) cli();
-
-module.exports = function oligo(): wdm.WebpackDevMiddleware {
-  console.log(`🦖 🦕 Oligo live (${env}) from ${cwd}`);
-  const compiler = webpack(new Oligo(version, config).webpackConfig());
-  return wdm(compiler, {
-    watchOptions: { poll: 1000 },
-    stats: {
-      assets: false,
-      children: false,
-      chunks: false,
-      chunkModules: false,
-      colors: true,
-      entrypoints: false,
-      hash: false,
-      modules: false,
-      timings: false,
-      version: false,
-    },
-  });
-};

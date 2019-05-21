@@ -17,6 +17,7 @@ rules:
 
   prefer-destructuring: warn
 
+  import/no-unresolved: 'off'
   indent: 'off'
   "@typescript-eslint/indent":
   - error
