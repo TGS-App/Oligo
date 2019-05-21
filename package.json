@@ -1,6 +1,6 @@
 {
   "name": "oligo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "🦖 🦕 Oligo provides build tooling for the TGS App",
   "license": "MIT",
   "author": "Kyle Hensel",
@@ -75,6 +75,6 @@
   },
   "scripts": {
     "test": "eslint src --ext .ts",
-    "prepublish": "tsc"
+    "prepare": "tsc"
   }
 }

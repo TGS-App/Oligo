@@ -338,37 +338,38 @@ class Oligo {
   }
 }
 
-async function main(): Promise<void> {
+const { version } = require($('package.json')); // eslint-disable-line
+const config: OligoConfig = require($('oligo.json')); // eslint-disable-line
+
+async function cli(): Promise<void> {
   if (process.argv.includes('-v')) {
     const { version: v } = await import(path.join(__dirname, '../package.json'));
     console.log(`🦖 🦕 Oligo v${v} installed in ${__dirname}`);
     return;
   }
-  const { version } = await import($('package.json'));
-  const config: OligoConfig = await import($('oligo.json'));
 
-  if (require.main === module) {
-    const compiler = webpack(new Oligo(version, config).webpackConfig());
-    console.log(`🦖 🦕 Oligo live (${env}) from ${cwd}`);
-    module.exports = (): wdm.WebpackDevMiddleware => wdm(compiler, {
-      watchOptions: { poll: 1000 },
-      stats: {
-        assets: false,
-        children: false,
-        chunks: false,
-        chunkModules: false,
-        colors: true,
-        entrypoints: false,
-        hash: false,
-        modules: false,
-        timings: false,
-        version: false,
-      },
-    });
-  } else {
-    console.log(`🦖 🦕 Oligo building for ${env} from ${cwd}`);
-    await new Oligo(version, config).build();
-  }
+  console.log(`🦖 🦕 Oligo building for ${env} from ${cwd}`);
+  await new Oligo(version, config).build();
 }
 
-main();
+if (require.main !== module) cli();
+
+module.exports = function oligo(): wdm.WebpackDevMiddleware {
+  console.log(`🦖 🦕 Oligo live (${env}) from ${cwd}`);
+  const compiler = webpack(new Oligo(version, config).webpackConfig());
+  return wdm(compiler, {
+    watchOptions: { poll: 1000 },
+    stats: {
+      assets: false,
+      children: false,
+      chunks: false,
+      chunkModules: false,
+      colors: true,
+      entrypoints: false,
+      hash: false,
+      modules: false,
+      timings: false,
+      version: false,
+    },
+  });
+};
