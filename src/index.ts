@@ -4,7 +4,6 @@ import * as wdm from 'webpack-dev-middleware';
 import * as sharp from 'sharp';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as express from 'express';
 import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 import * as VueLoaderPlugin from 'vue-loader/lib/plugin';
 import * as MiniCssExtractPlugin from 'mini-css-extract-plugin';
@@ -30,24 +29,21 @@ const browsers = [
 ];
 
 interface OligoConfig {
-  routes: string;
-  port: number;
-  portHall: number;
   inputs: {
     root: string;
     entry: string;
     jade: string;
-    sw: string;
+    sw?: string;
   };
   outputs: {
     web: string;
-    cordova: string;
-    webAssets: string;
-    cordovaAssets: string;
+    cordova?: string;
+    webAssets?: string;
+    cordovaAssets?: string;
   };
-  googleServices: string;
+  googleServices?: string; // FIXME: make use of this
   modules: string[];
-  csp: {
+  csp?: {
     defaultSrc?: string[];
     scriptSrc?: string[];
     styleSrc?: string[];
@@ -57,7 +53,7 @@ interface OligoConfig {
     frameSrc?: string[];
     reportUri?: string[];
   };
-  assets: Record<string, {
+  assets?: Record<string, {
     sizes: number[] | string[] | {
       ldpi: number;
       mdpi: number;
@@ -81,11 +77,11 @@ class Oligo {
     this.config = config;
   }
 
-  public static cspToString(CSP: OligoConfig['csp']): string {
+  private static cspToString(CSP: OligoConfig['csp']): string {
     return Object.keys(CSP).map((scope): string => `${scope.replace(/[A-Z]/g, (char): string => `-${char.toLowerCase()}`)} ${CSP[scope].join(' ')}`).join('; ');
   }
 
-  private webpackConfig(): webpack.Configuration {
+  public webpackConfig(): webpack.Configuration {
     return {
       mode: env === 'dev' ? 'development' : 'production',
       entry: [
@@ -238,7 +234,7 @@ class Oligo {
           filename: 'index.html', // output name
           template: `!!pug-loader!${$(this.config.inputs.jade)}`,
           inject: true,
-          csp: Oligo.cspToString(this.config.csp),
+          csp: this.config.csp && Oligo.cspToString(this.config.csp),
           isCordova: env === 'cordova',
           minify: env !== 'dev' ? {
             collapseWhitespace: true,
@@ -250,7 +246,7 @@ class Oligo {
           } : false,
         }),
         new MiniCssExtractPlugin({ filename: 'css/app.css' }),
-        ...(env !== 'cordova' ? [
+        ...(env !== 'cordova' && this.config.inputs.sw ? [
           new WorkboxPlugin.InjectManifest({
             swSrc: $(this.config.inputs.sw),
           }),
@@ -260,10 +256,10 @@ class Oligo {
   }
 
   public async build(): Promise<webpack.Watching | webpack.Compiler> {
-    await fs.remove($(this.config.outputs.webAssets));
-    await fs.remove($(this.config.outputs.cordova));
+    if (this.config.outputs.webAssets) await fs.remove($(this.config.outputs.webAssets));
+    if (this.config.outputs.cordova) await fs.remove($(this.config.outputs.cordova));
     await fs.remove(webTemp);
-    await this.assets();
+    if (this.config.assets) await this.assets();
     console.log('Webpack build in progress... (this can take up to 5 minutes)');
 
     return webpack(this.webpackConfig(), async (err, stats): Promise<void> => {
@@ -293,30 +289,6 @@ class Oligo {
     });
   }
 
-  public dev(routes: express.Application): void {
-    const compiler = webpack(this.webpackConfig());
-    const app = express();
-    app.use(wdm(compiler, {
-      watchOptions: { poll: 1000 },
-      stats: {
-        assets: false,
-        children: false,
-        chunks: false,
-        chunkModules: false,
-        colors: true,
-        entrypoints: false,
-        hash: false,
-        modules: false,
-        timings: false,
-        version: false,
-      },
-    }));
-    app.use(routes);
-    app.listen(this.config.port, (): void => {
-      console.log(`Dev server listening on http://localhost:${this.config.port}`);
-    });
-  }
-
   private async assets(): Promise<void> {
     interface ResizeArgs {
       src: string;
@@ -326,7 +298,7 @@ class Oligo {
     }
     const resize = async ({
       src, size, sizeName, output,
-    }: ResizeArgs): Promise<void> => sharp($(src))
+    }: ResizeArgs): Promise<sharp.OutputInfo> => sharp($(src))
       .resize(...(Array.isArray(size) ? size : [size]))
       .toFile($(output.replace(/{{size}}/g, sizeName || String(size))));
 
@@ -367,14 +339,34 @@ class Oligo {
 }
 
 async function main(): Promise<void> {
-  console.log(`🦖 🦕 Oligo building for ${env} from ${cwd}`);
+  if (process.argv.includes('-v')) {
+    const { version: v } = await import(path.join(__dirname, '../package.json'));
+    console.log(`🦖 🦕 Oligo v${v} installed in ${__dirname}`);
+    return;
+  }
   const { version } = await import($('package.json'));
   const config: OligoConfig = await import($('oligo.json'));
 
-  if (env === 'dev') {
-    const routes: express.Application = await import($(config.routes));
-    await new Oligo(version, config).dev(routes);
+  if (require.main === module) {
+    const compiler = webpack(new Oligo(version, config).webpackConfig());
+    console.log(`🦖 🦕 Oligo live (${env}) from ${cwd}`);
+    module.exports = (): wdm.WebpackDevMiddleware => wdm(compiler, {
+      watchOptions: { poll: 1000 },
+      stats: {
+        assets: false,
+        children: false,
+        chunks: false,
+        chunkModules: false,
+        colors: true,
+        entrypoints: false,
+        hash: false,
+        modules: false,
+        timings: false,
+        version: false,
+      },
+    });
   } else {
+    console.log(`🦖 🦕 Oligo building for ${env} from ${cwd}`);
     await new Oligo(version, config).build();
   }
 }
