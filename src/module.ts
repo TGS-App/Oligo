@@ -11,8 +11,9 @@ console.log(`🦖 🦕 Oligo live (${env}) from ${cwd}`);
 
 const compiler = webpack(new Oligo(version, config).webpackConfig());
 export default module.exports = wdm(compiler, {
-  publicPath: '../tmp',
+  publicPath: $(config.inputs.root),
   watchOptions: { poll: 1000 },
+  // lazy: false,
   stats: {
     assets: false,
     children: false,

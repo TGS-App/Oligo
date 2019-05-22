@@ -89,7 +89,7 @@ export class Oligo {
       output: {
         path: webTemp,
         filename: 'js/app.js',
-        publicPath: '',
+        publicPath: '/',
       },
       resolve: {
         extensions: ['.js', '.vue', '.json'],
