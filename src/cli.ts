@@ -8,13 +8,13 @@ const { version } = require($('package.json')); // eslint-disable-line
 const config: OligoConfig = require($('oligo.json')); // eslint-disable-line
 
 async function cli(): Promise<void> {
+  const { version: v } = await import(path.join(__dirname, '../package.json'));
   if (process.argv.includes('-v')) {
-    const { version: v } = await import(path.join(__dirname, '../package.json'));
     console.log(`🦖 🦕 Oligo v${v} installed in ${__dirname}`);
     return;
   }
 
-  console.log(`🦖 🦕 Oligo building for ${env} from ${cwd}`);
+  console.log(`🦖 🦕 Oligo v${v} building for ${env} from ${cwd}`);
   await new Oligo(version, config).build();
 }
 

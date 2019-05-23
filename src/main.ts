@@ -89,7 +89,7 @@ export class Oligo {
       output: {
         path: webTemp,
         filename: 'js/app.js',
-        publicPath: '/',
+        publicPath: env === 'cordova' ? '/android_assset/' : '/',
       },
       resolve: {
         extensions: ['.js', '.vue', '.json'],
@@ -255,7 +255,8 @@ export class Oligo {
 
   public async build(): Promise<webpack.Watching | webpack.Compiler> {
     if (this.config.outputs.webAssets) await fs.remove($(this.config.outputs.webAssets));
-    if (this.config.outputs.cordova) await fs.remove($(this.config.outputs.cordova));
+    const output = $(this.config.outputs[env === 'cordova' ? 'cordova' : 'web']);
+    await fs.remove(output);
     await fs.remove(webTemp);
     if (this.config.assets) await this.assets();
     console.log('Webpack build in progress... (this can take up to 5 minutes)');
@@ -277,8 +278,7 @@ export class Oligo {
       }
 
       console.log('Copying temp files to output...');
-      const output = $(this.config.outputs[env === 'cordova' ? 'cordova' : 'web']);
-      await fs.remove(output);
+
       await fs.copy(webTemp, output);
       await fs.remove(webTemp);
 
