@@ -76,7 +76,7 @@ export class Oligo {
   }
 
   private static cspToString(CSP: OligoConfig['csp']): string {
-    return Object.keys(CSP).map((scope): string => `${scope.replace(/[A-Z]/g, (char): string => `-${char.toLowerCase()}`)} ${CSP[scope].join(' ')}`).join('; ');
+    return Object.keys(CSP).map((scope): string => `${scope} ${CSP[scope].join(' ')}`).join('; ');
   }
 
   public webpackConfig(): webpack.Configuration {
