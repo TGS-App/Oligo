@@ -89,7 +89,7 @@ export class Oligo {
       output: {
         path: webTemp,
         filename: 'js/app.js',
-        publicPath: env === 'cordova' ? '/android_assset/' : '/',
+        publicPath: env === 'cordova' ? '/android_asset/www/' : '/',
       },
       resolve: {
         extensions: ['.js', '.vue', '.json'],
@@ -259,7 +259,7 @@ export class Oligo {
     await fs.remove(output);
     await fs.remove(webTemp);
     if (this.config.assets) await this.assets();
-    console.log('Webpack build in progress... (this can take up to 5 minutes)');
+    console.log('Webpack build in progress... (this can take up to 10 minutes)');
 
     return webpack(this.webpackConfig(), async (err, stats): Promise<void> => {
       if (err) throw err;
