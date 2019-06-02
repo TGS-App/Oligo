@@ -115,6 +115,7 @@ export class Oligo {
                   ['@babel/preset-env', { modules: false, targets: { browsers } }],
                 ],
                 plugins: ['@babel/plugin-syntax-dynamic-import'],
+                cacheDirectory: true,
               },
             },
             include: [
@@ -215,6 +216,7 @@ export class Oligo {
             uglifyOptions: { warnings: false },
             sourceMap: true,
             parallel: true,
+            cache: true,
           }),
           new OptimizeCSSPlugin({
             cssProcessorOptions: {
