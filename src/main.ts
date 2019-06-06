@@ -6,9 +6,11 @@ import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 import * as VueLoaderPlugin from 'vue-loader/lib/plugin';
 import * as MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import * as OptimizeCSSPlugin from 'optimize-css-assets-webpack-plugin';
-import * as UglifyJsPlugin from 'uglifyjs-webpack-plugin';
+import * as TerserPlugin from 'terser-webpack-plugin';
 import * as WorkboxPlugin from 'workbox-webpack-plugin';
+import * as SpeedMeasurePlugin from 'speed-measure-webpack-plugin';
 
+const smp = new SpeedMeasurePlugin();
 
 export const cwd = process.cwd();
 export const env = process.argv.includes('--dev') ? 'dev' : process.argv.includes('--cordova') ? 'cordova' : 'prod'; // eslint-disable-line
@@ -30,7 +32,6 @@ export interface OligoConfig {
   inputs: {
     root: string;
     entry: string;
-    jade: string;
     sw?: string;
   };
   outputs: {
@@ -80,7 +81,7 @@ export class Oligo {
   }
 
   public webpackConfig(): webpack.Configuration {
-    return {
+    return smp.wrap({
       mode: env === 'dev' ? 'development' : 'production',
       entry: [
         'babel-polyfill',
@@ -88,7 +89,7 @@ export class Oligo {
       ],
       output: {
         path: webTemp,
-        filename: 'js/app.js',
+        filename: 'js/[name].[contenthash].js',
         publicPath: env === 'cordova' ? '/android_asset/www/' : '/',
       },
       resolve: {
@@ -144,10 +145,10 @@ export class Oligo {
           {
             test: /\.css$/,
             use: [
-              (env === 'dev' ? 'style-loader' : {
+              {
                 loader: MiniCssExtractPlugin.loader,
                 options: { publicPath: '../' },
-              }),
+              },
               'css-loader',
             ],
             include: [
@@ -159,12 +160,10 @@ export class Oligo {
           {
             test: /\.s(a|c)ss$/,
             use: [
-              (env === 'dev' ? 'style-loader' : {
+              {
                 loader: MiniCssExtractPlugin.loader,
-                options: {
-                  publicPath: '../',
-                },
-              }),
+                options: { publicPath: '../', },
+              },
               'css-loader',
               'sass-loader',
             ],
@@ -172,30 +171,6 @@ export class Oligo {
               $(this.config.inputs.root),
               $('node_modules/framework7'),
               $('node_modules/framework7-vue'),
-            ],
-          },
-          {
-            test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-            loader: 'url-loader',
-            options: {
-              limit: 10000,
-              name: 'images/[name].[ext]',
-            },
-            include: [
-              $(this.config.inputs.root),
-              $('node_modules/framework7'), // FIXME: why do we need to transform images in f7 repo?
-              $('node_modules/framework7-vue'),
-            ],
-          },
-          {
-            test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-            loader: 'url-loader',
-            options: {
-              limit: 10000,
-              name: 'fonts/[name].[ext]',
-            },
-            include: [
-              $(this.config.inputs.root),
             ],
           },
         ],
@@ -209,30 +184,24 @@ export class Oligo {
             DATE: JSON.stringify(+new Date()),
           },
         }),
+        new webpack.HashedModuleIdsPlugin(),
         new VueLoaderPlugin(),
         ...(env !== 'dev' ? [
           // Production only plugins
-          new UglifyJsPlugin({
-            uglifyOptions: { warnings: false },
-            sourceMap: true,
-            parallel: true,
-            cache: true,
-          }),
           new OptimizeCSSPlugin({
             cssProcessorOptions: {
               safe: true,
               map: { inline: false },
             },
           }),
-          new webpack.optimize.ModuleConcatenationPlugin(),
         ] : [
           // Development only plugins
-          new webpack.HotModuleReplacementPlugin(),
-          new webpack.NamedModulesPlugin(),
+          // new webpack.HotModuleReplacementPlugin(),
+          // new webpack.NamedModulesPlugin(),
         ]),
         new HtmlWebpackPlugin({
           filename: 'index.html', // output name
-          template: `!!pug-loader!${$(this.config.inputs.jade)}`,
+          template: `${$(this.config.inputs.root)}/index.html`,
           inject: true,
           csp: this.config.csp && Oligo.cspToString(this.config.csp),
           isCordova: env === 'cordova',
@@ -252,13 +221,28 @@ export class Oligo {
           }),
         ] : []),
       ],
-    };
+      optimization: {
+        minimizer: [new TerserPlugin({
+          cache: true,
+          parallel: true,
+        })],
+        runtimeChunk: 'single',
+        splitChunks: {
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
+          },
+        },
+      },
+    });
   }
 
   public async build(): Promise<webpack.Watching | webpack.Compiler> {
     if (this.config.outputs.webAssets) await fs.remove($(this.config.outputs.webAssets));
     const output = $(this.config.outputs[env === 'cordova' ? 'cordova' : 'web']);
-    await fs.remove(output);
     await fs.remove(webTemp);
     if (this.config.assets) await this.assets();
     console.log('Webpack build in progress... (this can take up to 10 minutes)');
@@ -281,6 +265,7 @@ export class Oligo {
 
       console.log('Copying temp files to output...');
 
+      await fs.remove(output);
       await fs.copy(webTemp, output);
       await fs.remove(webTemp);
 
