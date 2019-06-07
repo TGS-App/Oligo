@@ -162,7 +162,7 @@ export class Oligo {
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
-                options: { publicPath: '../', },
+                options: { publicPath: '../' },
               },
               'css-loader',
               'sass-loader',
