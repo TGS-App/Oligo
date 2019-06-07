@@ -149,7 +149,7 @@ export class Oligo {
                 loader: MiniCssExtractPlugin.loader,
                 options: { publicPath: '../' },
               },
-              'css-loader',
+              'css-loader?-url',
             ],
             include: [
               $(this.config.inputs.root),
@@ -164,7 +164,7 @@ export class Oligo {
                 loader: MiniCssExtractPlugin.loader,
                 options: { publicPath: '../' },
               },
-              'css-loader',
+              'css-loader?-url',
               'sass-loader',
             ],
             include: [
