@@ -1,6 +1,6 @@
 {
   "name": "oligo",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "🦖 🦕 Oligo provides build tooling for the TGS App",
   "license": "MIT",
   "author": "Kyle Hensel",
@@ -42,7 +42,6 @@
     "@types/node": "^12.0.1",
     "@types/sharp": "^0.22.2",
     "@types/webpack": "^4.4.31",
-    "@types/webpack-dev-middleware": "^2.0.2",
     "@types/workbox-webpack-plugin": "^4.1.0",
     "@typescript-eslint/eslint-plugin": "^1.9.0",
     "@typescript-eslint/parser": "^1.9.0",

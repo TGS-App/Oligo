@@ -10,10 +10,9 @@ const config: OligoConfig = require($('oligo.json')); // eslint-disable-line
 console.log(`🦖 🦕 Oligo live (${env}) from ${cwd}`);
 
 const compiler = webpack(new Oligo(version, config).webpackConfig());
-export default module.exports = wdm(compiler, {
-  publicPath: $(config.inputs.root),
+export default module.exports = (): unknown => wdm(compiler, {
+  // publicPath: $(oligoConfig.inputs.root),
   watchOptions: { poll: 1000 },
-  // lazy: false,
   stats: {
     assets: false,
     children: false,
