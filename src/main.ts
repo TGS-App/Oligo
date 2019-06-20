@@ -64,6 +64,7 @@ export interface OligoConfig {
     src: string;
     output: string;
   }>;
+  copy?: Record<string, string>;
 }
 
 export class Oligo {
@@ -269,6 +270,12 @@ export class Oligo {
       await fs.copy(webTemp, output);
       await fs.remove(webTemp);
       await fs.copy($(this.config.outputs.webAssets), $(this.config.outputs.cordovaAssets));
+      if (this.config.copy) {
+        for (const file in this.config.copy) {
+          await fs.copy($(file), $(this.config.copy[file]));
+          console.log(`copied ${file} -> ${this.config.copy[file]}`);
+        }
+      }
 
       console.log('✔ Build complete.\n');
       process.exit(0);
