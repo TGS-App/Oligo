@@ -245,7 +245,7 @@ export class Oligo {
     const output = $(this.config.outputs[env === 'cordova' ? 'cordova' : 'web']);
     await fs.remove(webTemp);
     if (this.config.assets) await this.assets();
-    console.log('Webpack build in progress... (this can take up to 10 minutes)');
+    console.log('Webpack build in progress... (this can take up to 5 minutes)');
 
     return webpack(this.webpackConfig(), async (err, stats): Promise<void> => {
       if (err) throw err;
@@ -268,6 +268,7 @@ export class Oligo {
       await fs.remove(output);
       await fs.copy(webTemp, output);
       await fs.remove(webTemp);
+      await fs.copy($(this.config.outputs.webAssets), $(this.config.outputs.cordovaAssets));
 
       console.log('✔ Build complete.\n');
       process.exit(0);
@@ -313,8 +314,6 @@ export class Oligo {
           count += 1;
         }
       }
-      console.log('Copying files...');
-      await fs.copy($(this.config.outputs.webAssets), $(this.config.outputs.cordovaAssets));
       console.log(`Converted ${count} assets!`);
     } catch (err) {
       console.error(`Conversion failed after ${count} assets!`, err);
