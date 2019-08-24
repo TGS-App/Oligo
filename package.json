@@ -1,6 +1,6 @@
 {
   "name": "oligo",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "🦖 🦕 Oligo provides build tooling for the TGS App",
   "license": "MIT",
   "author": "Kyle Hensel",
@@ -39,6 +39,7 @@
   "devDependencies": {
     "@types/fs-extra": "^8.0.0",
     "@types/html-webpack-plugin": "^3.2.0",
+    "@types/webpack-dev-middleware": "^2.0.3",
     "@types/node": "^12.0.9",
     "@types/sharp": "^0.22.2",
     "@types/webpack": "^4.4.31",
@@ -56,7 +57,6 @@
     "type": "git",
     "url": "git+https://github.com/TGS-App/Oligo.git"
   },
-  "homepage": "https://tgs.kyle.kiwi",
   "engines": {
     "node": ">=10.0.0"
   },
@@ -71,7 +71,6 @@
   },
   "scripts": {
     "test": "eslint src --ext .ts",
-    "prepare": "tsc",
-    "bindev": "tsc && cp -r package.json dist C:/Users/Kyle/AppData/Roaming/npm/node_modules/oligo && cp -r package.json dist ../TGS-App/node_modules/oligo"
+    "prepare": "tsc"
   }
 }
