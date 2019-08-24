@@ -10,3 +10,13 @@
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg?style=flat)](LICENSE)
 
 🦖 🦕 Oligo provides build tooling and setup help for the TGS App.
+
+## Usage
+
+```bash
+oligo # will use oligo.json in current directory
+oligo --config "path/to/oligo.json"
+
+oligo --dev # for dev mode (hot reload etc.)
+oligo --cordova # for cordova build
+```

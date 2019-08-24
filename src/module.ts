@@ -1,11 +1,11 @@
 import * as webpack from 'webpack';
 import * as wdm from 'webpack-dev-middleware';
 import {
-  Oligo, OligoConfig, $, env, cwd,
+  Oligo, OligoConfig, $, env, cwd, configFilePath,
 } from './main';
 
 const { version } = require($('package.json')); // eslint-disable-line
-const config: OligoConfig = require($('oligo.json')); // eslint-disable-line
+const config: OligoConfig = require($(configFilePath)); // eslint-disable-line
 
 console.log(`🦖 🦕 Oligo live (${env}) from ${cwd}`);
 
