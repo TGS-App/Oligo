@@ -14,7 +14,7 @@ const smp = new SpeedMeasurePlugin();
 
 export const cwd = process.cwd();
 export const env = process.argv.includes('--dev') ? 'dev' : process.argv.includes('--cordova') ? 'cordova' : 'prod'; // eslint-disable-line
-export const configFilePath = (/--config "(.+)"/.exec(process.argv.join(' ')) || [])[1] || 'oligo.json';
+export const configFilePath = (/--config (.+\.json)/.exec(process.argv.join(' ')) || [])[1] || 'oligo.json';
 
 const webTemp = path.join(__dirname, '../tmp');
 export const $ = (dir: string): string => path.join(cwd, dir);

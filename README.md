@@ -13,10 +13,27 @@
 
 ## Usage
 
+### CLI
+
 ```bash
 oligo # will use oligo.json in current directory
 oligo --config "path/to/oligo.json"
 
 oligo --dev # for dev mode (hot reload etc.)
 oligo --cordova # for cordova build
+```
+
+### Programmatic
+_Assuming production builds into `/www`._
+```ts
+import * as express from 'express';
+import Oligo from 'oligo';
+
+const app = express();
+
+if (process.argv.includes('--dev')) {
+  app.use(Oligo()); // dev
+} else {
+  app.use(express.static('www')); // prod
+}
 ```
