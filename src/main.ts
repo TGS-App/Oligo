@@ -38,8 +38,6 @@ export interface OligoConfig {
   outputs: {
     web: string;
     cordova?: string;
-    webAssets?: string;
-    cordovaAssets?: string;
   };
   googleServices?: string; // FIXME: make use of this
   modules: string[];
@@ -243,7 +241,6 @@ export class Oligo {
   }
 
   public async build(): Promise<webpack.Watching | webpack.Compiler> {
-    if (this.config.outputs.webAssets) await fs.remove($(this.config.outputs.webAssets));
     const output = $(this.config.outputs[env === 'cordova' ? 'cordova' : 'web']);
     await fs.remove(webTemp);
     if (this.config.assets) await this.assets();
@@ -270,7 +267,9 @@ export class Oligo {
       await fs.remove(output);
       await fs.copy(webTemp, output);
       await fs.remove(webTemp);
-      await fs.copy($(this.config.outputs.webAssets), $(this.config.outputs.cordovaAssets));
+
+      if (this.config.assets) await this.assets();
+
       if (this.config.copy) {
         for (const file in this.config.copy) {
           await fs.copy($(file), $(this.config.copy[file]));
