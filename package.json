@@ -1,6 +1,6 @@
 {
   "name": "oligo",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "🦖 🦕 Oligo provides build tooling for the TGS App",
   "license": "MIT",
   "author": "Kyle Hensel",
@@ -56,9 +56,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TGS-App/Oligo.git"
-  },
-  "engines": {
-    "node": ">=10.0.0"
   },
   "files": [
     "/dist",
