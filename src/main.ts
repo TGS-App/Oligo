@@ -40,7 +40,7 @@ export interface OligoConfig {
     cordova?: string;
   };
   googleServices?: string; // FIXME: make use of this
-  modules: string[];
+  modules?: string[];
   csp?: {
     defaultSrc?: string[];
     scriptSrc?: string[];
@@ -130,7 +130,7 @@ export class Oligo {
               $('node_modules/dom7'),
               $('node_modules/ssr-window'),
 
-              ...this.config.modules.map((name: string): string => $(`node_modules/${name}`)),
+              ...(this.config.modules || []).map((name: string): string => $(`node_modules/${name}`)),
             ],
           },
           {
