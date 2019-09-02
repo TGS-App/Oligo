@@ -211,7 +211,7 @@ export class Oligo {
             removeRedundantAttributes: true,
             removeScriptTypeAttributes: true,
             removeStyleLinkTypeAttributes: true,
-            useShortDoctype: true,
+            useShortDoctype: false,
           } : false,
         }),
         new MiniCssExtractPlugin({ filename: 'css/app.css' }),
