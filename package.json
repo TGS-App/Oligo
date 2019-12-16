@@ -30,7 +30,7 @@
     "template7": "^1.4.1",
     "terser-webpack-plugin": "^2.0.0",
     "vue": "^2.6.10",
-    "vue-loader": "^15.7.0",
+    "vue-loader": "^15.8.3",
     "vue-style-loader": "^4.1.2",
     "vue-template-compiler": "^2.6.10",
     "webpack": "^4.37.0",
