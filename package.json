@@ -22,7 +22,7 @@
     "mocha": "^7.0.1",
     "node-sass": "^4.12.0",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
-    "pug": "^2.0.3",
+    "pug": "^3.0.1",
     "pug-plain-loader": "^1.0.0",
     "sass-loader": "^8.0.0",
     "sharp": "^0.24.1",
